@@ -27,6 +27,8 @@
 #include "apps/dhcpserver/dhcpserver.h"
 #include "apps/dhcpserver/dhcpserver_options.h"
 
+
+#include "commands.h"
  
 /* The examples use WiFi configuration that you can set via project configuration menu.
  
@@ -70,21 +72,21 @@ static void wifi_event_handler(		void			*arg,
 	}
 }
 
-esp_netif_t* __esp_netif_create_default_wifi_ap(void)
+static esp_netif_t *__esp_netif_create_default_wifi_ap( void )
 {
 	esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_AP();
 
 //	cfg.base->flags = ESP_NETIF_DHCP_SERVER | ESP_NETIF_FLAG_AUTOUP;
-	esp_netif_t *netif = esp_netif_new(&cfg);
+	esp_netif_t *netif = esp_netif_new( &cfg );
 
-	assert(netif);
-	esp_netif_attach_wifi_ap(netif);
+	assert( netif );
+	esp_netif_attach_wifi_ap( netif );
 	esp_wifi_set_default_wifi_ap_handlers();
 	return netif;
 }
 
 
-void wifi_init_softap()
+static void wifi_init_softap( void )
 {
 	esp_err_t			ret = ESP_FAIL;
 
@@ -144,7 +146,15 @@ void wifi_init_softap()
 				ESP_WIFI_PASS,
 				ESP_WIFI_CHANNEL );
 }
- 
+
+extern void stop();
+extern void forward();
+extern void backward();
+extern void right();
+extern void left();
+
+
+
 static void do_stuff( void *pvParameters )
 {
 	int				len;
@@ -166,11 +176,46 @@ static void do_stuff( void *pvParameters )
 		}
 		else 
 		{
-			rx_buffer[len] = 0; // Null-terminate whatever is received and treat it like a string
+			commands_t	cmd;
+			memset( &cmd, 0, sizeof( commands_t ) );
+			memcpy( &cmd, rx_buffer, sizeof( commands_t ) );
+
+			switch ( cmd.cmd_type )
+			{
+				case TYPE_CMD:
+						if ( ( 0 == cmd.cmds[LEFT_X_DATA] ) && ( 0 == cmd.cmds[LEFT_Y_DATA] ) )
+						{
+			printf( "Received1\n" );
+							stop();
+						}
+						if ( ( 0 != cmd.cmds[LEFT_X_DATA] ) && ( 0 == cmd.cmds[LEFT_Y_DATA] ) )
+						{
+			printf( "Received2\n" );
+							if ( 0 > cmd.cmds[LEFT_X_DATA] )
+								left();
+							else
+								right();
+						}
+						if ( ( 0 == cmd.cmds[LEFT_X_DATA] ) && ( 0 != cmd.cmds[LEFT_Y_DATA] ) )
+						{
+			printf( "Received3\n" );
+							if ( 0 > cmd.cmds[LEFT_Y_DATA] )
+								forward();
+							else
+								backward();
+						}
+					break;
+				case TYPE_VIDEO:
+					break;
+				default:
+					break;
+
+
+			
+			}
+/*			rx_buffer[len] = 0; // Null-terminate whatever is received and treat it like a string
 			ESP_LOGI( TAG, "Received %d bytes: %s", len, rx_buffer );
  
-            // send() can return less bytes than supplied length.
-            // Walk-around for robust implementation.
 			int		to_write = len;
 			while ( to_write > 0 )
 			{
@@ -181,6 +226,7 @@ static void do_stuff( void *pvParameters )
 				}
 				to_write -= written;
 			}
+*/
 		}
 	}
         shutdown( sock, 0 );
@@ -252,8 +298,6 @@ static void tcp_server_task( void *pvParameters )
 		ESP_LOGI( TAG, "Server : %s client connected.\n", addr_str );
 
 		xTaskCreatePinnedToCore( do_stuff, "do_stuff", 4096, ( void * ) &sock, 5, NULL, 1 );
-//		do_stuff( ( void * )&sock );
- 
 	}
  
 CLEAN_UP:

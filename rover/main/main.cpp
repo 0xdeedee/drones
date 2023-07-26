@@ -32,8 +32,9 @@ static void right_motors_stop()
 	rear_right_motor.brake();
 }
 
-static void stop()
+void stop()
 {
+	printf( "%s\n", __FUNCTION__ );
 	left_motors_stop();
 	right_motors_stop();
 }
@@ -62,28 +63,32 @@ static void right_motors_backward()
 	rear_right_motor.setspeed( -right_speed );
 }
 
-static void forward()
+void forward()
 {
+	printf( "%s\n", __FUNCTION__ );
 	left_motors_forward();
 	right_motors_forward();
 }
 
-static void backward()
+void backward()
 {
+	printf( "%s\n", __FUNCTION__ );
 	left_motors_backward();
 	right_motors_backward();
 }
 
-static void right()
+void right()
 {
+	printf( "%s\n", __FUNCTION__ );
 	front_left_motor.setspeed( -left_speed );
 	rear_left_motor.setspeed( left_speed );
 	front_right_motor.setspeed( -right_speed );
 	rear_right_motor.setspeed( right_speed );
 }
 
-static void left()
+void left()
 {
+	printf( "%s\n", __FUNCTION__ );
 	front_left_motor.setspeed( left_speed );
 	rear_left_motor.setspeed( -left_speed );
 	front_right_motor.setspeed( right_speed );
